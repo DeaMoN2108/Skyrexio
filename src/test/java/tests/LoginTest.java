@@ -1,24 +1,38 @@
 package tests;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import io.qameta.allure.*;
+import org.testng.annotations.*;
+import user.User;
+import static enums.TitleNaming.PRODUCTS;
+import static org.testng.Assert.*;
+import static user.UserFactory.*;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-
-public class LoginTest extends Basetest {
-
-    @Test
+@Epic("Проверка страницы Login")
+@Owner("Dmitriy Yaroshchuk test@test.ru")
+public class LoginTest extends BaseTest {
+    @Feature("Проверка авторизации")
+    @Story("С корректными данными")
+    @Severity(SeverityLevel.BLOCKER)
+    @TmsLink("Skyrexio")
+    @Issue("test")
+    @Test(description = "Проверка авторизации")
     public void checkLogin() {
         loginPage.open();
-        loginPage.login("standard_user", "secret_sauce");
-        assertEquals(productsPage.getTitle(), "Products");
+        assertEquals(loginPage.getColorLoginBtn(), "rgba(61, 220, 145, 1)");
+        loginPage.login(withAdminPermission());
+        assertEquals(productsPage.getTitle(), PRODUCTS.getDisplayName());
     }
 
-    @Test(dataProvider = "incorrectData")
-    public void checkIncorrectLogin(String user, String password, String errorMessage) {
-        loginPage.open();
-        loginPage.login(user, password);
+    @Feature("Проверка авторизации")
+    @Story("С не корреткными данными")
+    @Severity(SeverityLevel.CRITICAL)
+    @TmsLink("Skyrexio")
+    @Issue("test")
+    @Test(description = "Проверка некорректной авторизации", dataProvider = "incorrectData")
+    public void checkIncorrectLogin(User user, String errorMessage) {
+        loginPage
+                .open()
+                .login(user);
         assertTrue(loginPage.isErrorMsgDisplayed(), "The error message fails to appear");
         assertEquals(loginPage.getErrorMsg(), errorMessage);
     }
@@ -26,10 +40,10 @@ public class LoginTest extends Basetest {
     @DataProvider(name = "incorrectData")
     public Object[][] loginData() {
         return new Object[][]{
-                {"locked_out_user", "secret_sauce", "Epic sadface: Sorry, this user has been locked out."},
-                {"", "secret_sauce", "Epic sadface: Username is required"},
-                {"standard_user", "", "Epic sadface: Password is required"},
-                {"Standard_user", "secret_sauce", "Epic sadface: Username and password do not match any user in this service"}
+                {withLockedPermission(), "Epic sadface: Sorry, this user has been locked out."},
+                {withEmptyLogPermission(), "Epic sadface: Username is required"},
+                {withEmptyPassPermission(), "Epic sadface: Password is required"},
+                {withIncorrectPermission(), "Epic sadface: Username and password do not match any user in this service"}
         };
     }
 }
